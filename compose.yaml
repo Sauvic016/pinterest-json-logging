@@ -1,0 +1,109 @@
+services:
+  kafka:
+    # shortcut: one local broker has no replication; add replicas before relying on broker availability.
+    # shortcut: latest may change Kafka versions on pull; pin a tested tag before shared deployment.
+    image: apache/kafka:latest
+    hostname: kafka
+    environment:
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_LISTENERS: CONTROLLER://:29093,PLAINTEXT_HOST://:9092,PLAINTEXT://:19092
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT_HOST://127.0.0.1:9092,PLAINTEXT://kafka:19092
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:29093
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_LOG_DIRS: /var/lib/kafka/data
+    ports:
+      - "127.0.0.1:9092:9092"
+    volumes:
+      - kafka_data:/var/lib/kafka/data
+    healthcheck:
+      test: ["CMD", "/opt/kafka/bin/kafka-broker-api-versions.sh", "--bootstrap-server", "localhost:9092"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  opensearch:
+    # shortcut: unauthenticated loopback service for local learning; configure security before sharing it.
+    image: opensearchproject/opensearch:3.9.0
+    environment:
+      discovery.type: single-node
+      DISABLE_INSTALL_DEMO_CONFIG: "true"
+      DISABLE_SECURITY_PLUGIN: "true"
+      OPENSEARCH_JAVA_OPTS: "-Xms512m -Xmx512m"
+    ports:
+      - "127.0.0.1:9200:9200"
+    volumes:
+      - opensearch_data:/usr/share/opensearch/data
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:9200/_cluster/health?wait_for_status=yellow&timeout=2s"]
+      interval: 5s
+      timeout: 5s
+      retries: 24
+
+  opensearch-dashboards:
+    image: opensearchproject/opensearch-dashboards:3.9.0
+    environment:
+      OPENSEARCH_HOSTS: '["http://opensearch:9200"]'
+      DISABLE_SECURITY_DASHBOARDS_PLUGIN: "true"
+    ports:
+      - "127.0.0.1:5601:5601"
+    depends_on:
+      opensearch:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "/usr/share/opensearch-dashboards/node/bin/node",
+          "-e",
+          "fetch('http://127.0.0.1:5601/api/status').then(r => { if (!r.ok) process.exitCode = 1; }).catch(() => { process.exitCode = 1; })",
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 24
+
+  postgres:
+    image: postgres:17
+    environment:
+      POSTGRES_USER: logging
+      POSTGRES_PASSWORD: local-logging-only
+      POSTGRES_DB: logs
+    ports:
+      - "127.0.0.1:5433:5432"
+    volumes:
+      - logging_data:/var/lib/postgresql/data
+      - ./apps/server/sql/001-events.sql:/docker-entrypoint-initdb.d/001-events.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U logging -d logs"]
+      interval: 2s
+      timeout: 3s
+      retries: 20
+
+  grafana:
+    image: grafana/grafana:13.1.0
+    ports:
+      - "127.0.0.1:3000:3000"
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:-local-grafana-only}
+      GF_USERS_ALLOW_SIGN_UP: "false"
+      GF_AUTH_ANONYMOUS_ENABLED: "false"
+      GRAFANA_DB_HOST: ${GRAFANA_DB_HOST:-postgres:5432}
+      GRAFANA_DB_NAME: ${GRAFANA_DB_NAME:-logs}
+      GRAFANA_DB_PASSWORD: ${GRAFANA_DB_PASSWORD:-local-reader-only}
+      GRAFANA_DB_SSLMODE: ${GRAFANA_DB_SSLMODE:-disable}
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./apps/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./apps/grafana/dashboards:/etc/grafana/dashboards:ro
+
+volumes:
+  kafka_data:
+  opensearch_data:
+  logging_data:
+  grafana_data:

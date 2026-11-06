@@ -1,0 +1,174 @@
+apiVersion: 1
+groups:
+  - orgId: 1
+    name: practice alerts
+    folder: Client logging
+    interval: 1m
+    rules:
+      - uid: dg3abmpqr6nlsf
+        title: "Practice: More than 5 pin save failed"
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 600
+              to: 0
+            datasourceUid: demo-postgres
+            model:
+              dataset: neondb
+              editorMode: code
+              format: table
+              intervalMs: 1000
+              maxDataPoints: 43200
+              rawQuery: true
+              rawSql: "SELECT\r\n  now() AS time,\r\n  count(*) :: double precision AS failures\r\nFROM\r\n  public.events\r\nWHERE\r\n  app = 'pin-demo'\r\n  AND event_name = 'pin_save_failed'\r\n  AND received_at > now() - interval '5 minutes'\r\n  AND received_at <= now();"
+              refId: A
+              sql:
+                columns:
+                  - parameters: []
+                    type: function
+                groupBy:
+                  - property:
+                      type: string
+                    type: groupBy
+                limit: 50
+          - refId: B
+            queryType: expression
+            datasourceUid: __expr__
+            model:
+              conditions:
+                - evaluator:
+                    params: []
+                    type: gt
+                  operator:
+                    type: and
+                  query:
+                    params: []
+                  reducer:
+                    params: []
+                    type: last
+                  type: query
+              datasource:
+                type: __expr__
+                uid: __expr__
+              expression: A
+              intervalMs: 1000
+              maxDataPoints: 43200
+              reducer: last
+              refId: B
+              type: reduce
+          - refId: C
+            queryType: expression
+            datasourceUid: __expr__
+            model:
+              conditions:
+                - evaluator:
+                    params:
+                      - 5
+                    type: gt
+                  operator:
+                    type: and
+                  query:
+                    params:
+                      - C
+                  reducer:
+                    params: []
+                    type: last
+                  type: query
+              datasource:
+                type: __expr__
+                uid: __expr__
+              expression: B
+              intervalMs: 1000
+              maxDataPoints: 43200
+              refId: C
+              type: threshold
+        noDataState: NoData
+        execErrState: Error
+        isPaused: false
+        notification_settings:
+          receiver: local-test
+      - uid: bg3amuylubxfkc
+        title: "Practice: Pin Save Success Rate Below 90%."
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 300
+              to: 0
+            datasourceUid: demo-postgres
+            model:
+              dataset: neondb
+              editorMode: code
+              format: table
+              intervalMs: 1000
+              maxDataPoints: 43200
+              rawQuery: true
+              rawSql: "WITH attempts AS (\r\n  SELECT\r\n    COUNT(*) FILTER (\r\n      WHERE event_name = 'pin_save_succeeded'\r\n    ) AS successful_saves,\r\n\r\n    COUNT(*) FILTER (\r\n      WHERE event_name IN (\r\n        'pin_save_succeeded',\r\n        'pin_save_failed'\r\n      )\r\n    ) AS total_attempts\r\n\r\n  FROM public.events\r\n\r\n  WHERE app = 'pin-demo'\r\n    AND received_at > now() - interval '5 minutes'\r\n    AND received_at <= now()\r\n)\r\n\r\nSELECT\r\n  now() AS time,\r\n  CASE\r\n    WHEN total_attempts = 0 THEN NULL\r\n    ELSE successful_saves::double precision\r\n         / total_attempts * 100\r\n  END AS success_rate\r\nFROM attempts;"
+              refId: A
+              sql:
+                columns:
+                  - parameters: []
+                    type: function
+                groupBy:
+                  - property:
+                      type: string
+                    type: groupBy
+                limit: 50
+          - refId: B
+            queryType: expression
+            datasourceUid: __expr__
+            model:
+              conditions:
+                - evaluator:
+                    params: []
+                    type: gt
+                  operator:
+                    type: and
+                  query:
+                    params: []
+                  reducer:
+                    params: []
+                    type: last
+                  type: query
+              datasource:
+                type: __expr__
+                uid: __expr__
+              expression: A
+              intervalMs: 1000
+              maxDataPoints: 43200
+              reducer: last
+              refId: B
+              type: reduce
+          - refId: C
+            queryType: expression
+            datasourceUid: __expr__
+            model:
+              conditions:
+                - evaluator:
+                    params:
+                      - 90
+                    type: lt
+                  operator:
+                    type: and
+                  query:
+                    params:
+                      - C
+                  reducer:
+                    params: []
+                    type: last
+                  type: query
+              datasource:
+                type: __expr__
+                uid: __expr__
+              expression: B
+              intervalMs: 1000
+              maxDataPoints: 43200
+              refId: C
+              type: threshold
+        noDataState: NoData
+        execErrState: Error
+        for: 1m
+        isPaused: false
+        notification_settings:
+          receiver: empty

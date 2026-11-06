@@ -1,0 +1,38 @@
+{
+  "name": "client-logging-lab",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "workspaces": [
+    "packages/*"
+  ],
+  "engines": {
+    "node": ">=22.18.0"
+  },
+  "scripts": {
+    "dev": "vite --host 127.0.0.1",
+    "api": "node --env-file-if-exists=.env apps/server/src/main.ts",
+    "consumer": "node --env-file-if-exists=.env apps/server/src/postgres/consumer.ts",
+    "consumer:opensearch": "node --env-file-if-exists=.env apps/server/src/opensearch/consumer.ts",
+    "kafka:up": "docker compose up -d --wait kafka",
+    "opensearch:up": "docker compose up -d --wait opensearch",
+    "opensearch:dashboards:up": "docker compose up -d --wait opensearch-dashboards",
+    "db:up": "docker compose up -d --wait postgres",
+    "db:setup": "node --env-file-if-exists=.env apps/server/scripts/init-event-schema.ts",
+    "grafana:setup": "node --env-file-if-exists=.env apps/server/scripts/provision-grafana-reader.ts",
+    "grafana:up": "docker compose up -d grafana",
+    "check": "tsc --noEmit",
+    "build": "npm run check && vite build"
+  },
+  "dependencies": {
+    "fastify": "^5.0.0",
+    "kafkajs": "^2.2.4",
+    "pg": "^8.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "@types/pg": "^8.0.0",
+    "typescript": "^6.0.0",
+    "vite": "^8.0.0"
+  }
+}

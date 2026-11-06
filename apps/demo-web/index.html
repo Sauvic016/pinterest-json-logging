@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Pin demo app</title>
+    <link rel="stylesheet" href="/style.css" />
+  </head>
+  <body>
+    <main>
+      <header>
+        <p class="eyebrow">CLIENT APP · SYNTHETIC DEMO</p>
+        <h1>Try saving a Pin.</h1>
+        <p>This app sends diagnostic events through the SDK when a simulated action succeeds or fails.</p>
+        <a id="inspector" href="/inspector.html" target="_blank" rel="noopener">Open event inspector in a new tab</a>
+        <p><a href="http://127.0.0.1:5601/app/discover" target="_blank" rel="noopener">Search logs in OpenSearch Dashboards</a></p>
+      </header>
+      <section aria-labelledby="action-title">
+        <div class="section-heading">
+          <h2 id="action-title">Trigger an action</h2>
+          <span class="badge">Synthetic data only</span>
+        </div>
+        <label for="version">Simulated app version</label>
+        <select id="version">
+          <option value="1.0.0">1.0.0</option>
+          <option value="2.0.0">2.0.0</option>
+        </select>
+        <div class="controls">
+          <button id="success">Save Pin</button>
+          <button id="failure" class="secondary">Simulate failed save</button>
+          <button id="normal" class="secondary">Run 95 successes and 5 failures</button>
+          <button id="spike" class="secondary">Run 70 successes and 30 failures</button>
+          <button id="stop" class="secondary" disabled>Stop run</button>
+        </div>
+        <p class="hint">
+          Runs send one event per second and stop after 100 attempts. Nothing is sent until you select an action.
+        </p>
+        <p id="status" role="status" aria-live="polite">Ready. Select an action.</p>
+      </section>
+    </main>
+    <script type="module" src="/main.ts"></script>
+  </body>
+</html>

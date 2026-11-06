@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Event inspector</title>
+    <link rel="stylesheet" href="/style.css" />
+  </head>
+  <body>
+    <main>
+      <header>
+        <p class="eyebrow">EVENT INSPECTOR · READ ONLY</p>
+        <h1>Inspect stored events.</h1>
+        <p>This interface reads events from the backend. It does not create events or import the SDK.</p>
+        <a href="/" target="_blank" rel="noopener">Open demo app in a new tab</a>
+      </header>
+      <section aria-labelledby="storage-title">
+        <h2 id="storage-title">Recent events</h2>
+        <form id="filters" class="controls">
+          <label for="run-id"
+            >Run ID
+            <input
+              id="run-id"
+              name="run_id"
+              type="text"
+              maxlength="64"
+              pattern="[a-zA-Z0-9_-]*"
+              placeholder="Leave blank for all runs"
+          /></label>
+          <label for="app-version"
+            >Version <input id="app-version" name="app_version" placeholder="All versions"
+          /></label>
+          <label for="event-name">Event <input id="event-name" name="event_name" placeholder="All events" /></label>
+          <label for="severity"
+            >Severity
+            <select id="severity" name="severity">
+              <option value="">All</option>
+              <option>info</option>
+              <option>warn</option>
+              <option>error</option>
+            </select></label
+          >
+          <label for="since">Received after <input id="since" name="since" type="datetime-local" /></label>
+          <label for="until">Received before <input id="until" name="until" type="datetime-local" /></label>
+          <button type="submit">Refresh events</button>
+        </form>
+        <p id="storage-status" role="status" aria-live="polite">Loading stored events.</p>
+        <h3>Events by app version</h3>
+        <div class="table-scroll">
+          <table>
+            <thead>
+              <tr>
+                <th scope="col">Version</th>
+                <th scope="col">Total</th>
+                <th scope="col">Failed saves</th>
+              </tr>
+            </thead>
+            <tbody id="summary-rows"></tbody>
+          </table>
+        </div>
+        <p class="hint">The consumer may take a moment to store Kafka events. Counts cover all matching stored events; the table below shows at most 100.</p>
+        <p class="hint">
+          The latest 100 matching events refresh every 5 seconds while this page is visible. Select an event to see its
+          stored fields.
+        </p>
+        <div class="table-scroll">
+          <table>
+            <caption class="visually-hidden">
+              Recent events stored in PostgreSQL
+            </caption>
+            <thead>
+              <tr>
+                <th scope="col">Received at</th>
+                <th scope="col">Event</th>
+                <th scope="col">Version</th>
+                <th scope="col">Severity</th>
+                <th scope="col">Event ID</th>
+              </tr>
+            </thead>
+            <tbody id="rows"></tbody>
+          </table>
+        </div>
+      </section>
+      <section aria-labelledby="detail-title">
+        <h2 id="detail-title">Selected event</h2>
+        <pre id="detail">Select an event from the table.</pre>
+      </section>
+      <p class="hint">
+        This inspector shows persisted client events. Backend process logs appear in the API terminal. Charts and alerts
+        belong to the later monitoring step.
+      </p>
+    </main>
+    <script type="module" src="/inspector.ts"></script>
+  </body>
+</html>

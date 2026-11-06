@@ -1,0 +1,21 @@
+apiVersion: 1
+
+datasources:
+  - name: Demo events
+    uid: demo-postgres
+    type: postgres
+    access: proxy
+    url: $GRAFANA_DB_HOST
+    user: grafana_reader
+    isDefault: true
+    editable: false
+    jsonData:
+      database: $GRAFANA_DB_NAME
+      sslmode: $GRAFANA_DB_SSLMODE
+      postgresVersion: 1700
+      maxOpenConns: 3
+      maxIdleConns: 1
+      connMaxLifetime: 300
+      timeInterval: 1m
+    secureJsonData:
+      password: $GRAFANA_DB_PASSWORD
